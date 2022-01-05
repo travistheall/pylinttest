@@ -38,6 +38,8 @@ class CheckProj:
             for requirement in requirements:
                 req_line = ''.join([character for character in requirement if character.isalpha()])
                 req_line = req_line.strip()
+                if req_line == 'os':
+                    print('os')
                 self.req = self.req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
 
     def check_for_out_file(self):
@@ -90,6 +92,16 @@ class CheckProj:
             not_used.set_index('file_name', inplace=True)
             self.unused = not_used
 
+    def append_to_errors(self, pkg):
+        """
+        if it's not in the requirements.txt
+        nor already accounted for in errors df
+        account for it
+        """
+        if pkg not in self.req.index and pkg not in self.errors.index:
+            err = pd.DataFrame([{"pkg": pkg, 'used': 1}]).set_index("pkg")
+            self.errors = self.errors.append(err)
+
     def check_file(self, f_name):
         """
         Checks each individual file for the used and unused packages
@@ -109,16 +121,16 @@ class CheckProj:
                     try:
                         unused_in_file = self.unused.loc[f_name]['pkg']
                         if isinstance(unused_in_file, str):
-                            unused_in_file = pd.Series(unused_in_file)
-                        if not pd.Series([pkg]).isin(unused_in_file).any():
+                            unused_in_file = pd.Series([unused_in_file])
+                        else:
+                            unused_in_file = unused_in_file.values
+                        s_pkg = pd.Series([pkg])
+                        if ~s_pkg.isin(unused_in_file).any() and s_pkg.isin(self.req.index).any():
                             self.req.at[pkg, 'used'] = 1
+                        else:
+                            self.append_to_errors(pkg)
                     except KeyError:
-                        # if it's not in the requirements.txt
-                        # nor already accounted for in errors df
-                        # account for it
-                        if pkg not in self.req.index and pkg not in self.errors.index:
-                            err = pd.DataFrame([{"pkg": pkg, 'used': 1}]).set_index("pkg")
-                            self.errors = self.errors.append(err)
+                        self.append_to_errors(pkg)
 
     def check_dir(self, dir_to_check):
         """
