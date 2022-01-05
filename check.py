@@ -40,7 +40,9 @@ class CheckProj:
                 if at_loc != -1:
                     req_line = requirement[:at_loc].strip()
                 else:
-                    req_line = ''.join([character for character in requirement if character.isalpha()])
+                    req_line = ''.join(
+                        [character for character in requirement if character.isalpha()]
+                    )
                     req_line = req_line.strip()
                 self.req = self.req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
 
@@ -140,7 +142,8 @@ class CheckProj:
                             # then it's not used
                             self.req.at[pkg, 'used'] = 1
                         else:
-                            # otherwise the package is used in the file but it's not in the requirements
+                            # otherwise the package is used in the file
+                            # but it's not in the requirements
                             # os, time, etc
                             # becomes not_in_requirements.csv
                             self.append_to_errors(pkg)
@@ -150,20 +153,27 @@ class CheckProj:
                         # becomes not_in_requirements.csv
                         self.append_to_errors(pkg)
 
-    def check_dir(self, dir_to_check):
+    def loop_dir(self, dir_to_check):
         """
         Recursively look through directories
         :param dir_to_check: directory name
         """
         # ['proj', 'check.py', ...]
         for file_name in os.listdir(dir_to_check):
-            dir_w_name = dir_to_check + "\\" + file_name
-            if len(file_name.split(".")) == 1:  # if it's a directory
-                # 'proj'.split(".") => ['proj'] => len == 1
-                self.check_dir(dir_w_name)
-            else:  # it's a file
-                # 'check.py'.split(".") => ['Check', 'py'] => len == 2
-                self.check_file(dir_w_name)
+            self.route_file_dir(file_name, dir_to_check)
+
+    def route_file_dir(self, file_name, dir_to_check):
+        """
+        :param file_name: file name
+        :param dir_to_check: directory name
+        """
+        dir_w_name = dir_to_check + "\\" + file_name
+        if len(file_name.split(".")) == 1:  # if it's a directory
+            # 'proj'.split(".") => ['proj'] => len == 1
+            self.loop_dir(dir_w_name)
+        else:  # it's a file
+            # 'check.py'.split(".") => ['Check', 'py'] => len == 2
+            self.check_file(dir_w_name)
 
     def run(self):
         """
@@ -172,12 +182,7 @@ class CheckProj:
         # ['proj', 'check.py', ...]
         base_dir = [x for x in os.listdir(self.base) if x not in ['.idea', '__pycache__', '.git']]
         for file in base_dir:
-            if len(file.split(".")) == 1:  # if it's a directory
-                # 'proj'.split(".") => ['proj'] => len == 1
-                self.check_dir(f"{self.base}\\{file}")
-            else:  # it's a file
-                # 'check.py'.split(".") => ['Check', 'py'] => len == 2
-                self.check_file(f"{self.base}\\{file}")
+            self.route_file_dir(file, self.base)
 
     def export_reqs(self):
         """
