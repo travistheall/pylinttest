@@ -7,6 +7,11 @@
 <h3>Steps</h3>
 <ol>
     <li>Clone me next to the repository</li>
+    <li>Run
+        <ul>
+            <li>rm -rf proj</li>
+        </ul>
+    </li>
     <li>
         Change base variable to this project
         <ul>
