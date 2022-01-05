@@ -57,13 +57,13 @@
     </tr>
     <tr>
         <td>scipy</td>
-        <td>0</td>
-        <td>delete me</td>
+        <td>1</td>
+        <td>keep me</td>
     </tr>
     <tr>
         <td>matplotlib</td>
         <td>0</td>
-        <td>keep me</td>
+        <td>delete me</td>
     </tr>
 </table>
 
