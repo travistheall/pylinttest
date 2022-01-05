@@ -1,9 +1,12 @@
-import pandas as pd
+"""
+Module to check requirements for used and unused packages.
+"""
 import os
 import time
+import pandas as pd
 
 
-class Check:
+class CheckProj:
     """
     Class used to check if requirements are used in a project.
     Steps:
@@ -19,14 +22,12 @@ class Check:
 
     def __init__(self, base):
         self.base = base
-        self.req = []
-        self.unused = []
-        self.cols = ['pkg', 'used']
-        self.ind = self.cols[0]
-        self.fake_cols = [['foo', 0]]
-        self.errors = pd.DataFrame(self.fake_cols, columns=self.cols)
-        self.dirs = [item for item in os.listdir() if len(item.split(".")) == 1]
+        self.req = pd.DataFrame(columns=['pkg', 'used'])
+        self.unused = pd.DataFrame(columns=['file_name', 'pkg'])
+        self.errors = pd.DataFrame(columns=['pkg', 'used'])
         self.errors.set_index('pkg', inplace=True)
+        self.unused.set_index('file_name', inplace=True)
+        self.req.set_index('pkg', inplace=True)
 
     def make_reqs(self):
         """
@@ -35,16 +36,19 @@ class Check:
         with open(f'{self.base}\\requirements.txt', 'r') as file:
             requirements = [line.replace('\n', "") for line in file]
             for requirement in requirements:
-                r = ''.join([character for character in requirement if character.isalpha()])
-                r = r.strip()
-                self.req.append(r)
+                req_line = ''.join([character for character in requirement if character.isalpha()])
+                req_line = req_line.strip()
+                self.req = self.req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
 
     def check_for_out_file(self):
+        """
+        lazy async await probably change the sleep to longer since bigger file
+        """
         try:
-            f = open(f'{self.base}\\out.txt', 'r')
-            f.close()
+            # fails if not there
+            with open(f'{self.base}\\out.txt', 'r') as file:
+                file.close()
         except FileNotFoundError:
-            # lazy async await probably change the sleep to longer since bigger file
             print('Line 57: FileNotFound sleep 5 seconds. Change me for longer wait')
             time.sleep(5)
             self.check_for_out_file()
@@ -57,14 +61,18 @@ class Check:
         self.check_for_out_file()
 
     def set_unused(self):
-        un = []  # un stands for unused im just lazy
-        with open(f'{self.base}\\out.txt', 'r') as pylintout:
-            for line in pylintout:
+        """
+        sets global unused
+        """
+        not_used = []  # using a different name for func scope
+        with open(f'{self.base}\\out.txt', 'r') as pylint_out:
+            for line in pylint_out:
                 # W0611 is unused-IMPORT error
+                # text processing
                 if line.find("W0611") != -1:
-                    # text processing
                     # line we care about is formatted like VVV
-                    # proj\mod\unused1.py:6:0: W0611: Unused shape IMPORTed from numpy (unused-IMPORT)
+                    # proj\\mod\\unused1.py:6:0: W0611: Unused shape
+                    # IMPORTed from numpy (unused-IMPORT)
                     line = line.replace('\n', "")
                     line = line.strip()
                     # file_in = proj\mod\unused1.py
@@ -73,30 +81,18 @@ class Check:
                     line = line.split(":")[-1].split(" ")
                     for word in line:
                         word = word.strip()
-                        if word in self.req:
+                        if word in self.req.index:
                             # if the word is in the requirements.txt then its a module
                             # in this case numpy
-                            un.append([file_in, word])
+                            not_used.append([file_in, word])
 
-            un = pd.DataFrame(un, columns=['file_name', 'pkg'])
-            un.set_index('file_name', inplace=True)
-            self.unused = un
-
-    def update_reqs(self):
-        """
-        Changes the list of requirements into a pandas data frame
-        pkg: the package
-        used: a boolean (well an int 0 or 1 where 0 means not used 1 means used)
-
-        Init all are 0.
-        Will Change to 1 when we find that it is used in the project
-        """
-        self.req = pd.DataFrame([[r, 0] for r in self.req], columns=self.cols)
-        self.req.set_index(self.ind, inplace=True)
+            not_used = pd.DataFrame(not_used, columns=['file_name', 'pkg'])
+            not_used.set_index('file_name', inplace=True)
+            self.unused = not_used
 
     def check_file(self, f_name):
         """
-        Checks each individual file for the used and unused pacakges
+        Checks each individual file for the used and unused packages
         Changes used from 0 to 1 if used.
         If it is used once then we should not remove it once iteration is over
 
@@ -112,16 +108,14 @@ class Check:
                     pkg = line[1].strip()
                     try:
                         unused_in_file = self.unused.loc[f_name]['pkg']
-                        if type(unused_in_file) == str:
+                        if isinstance(unused_in_file, str):
                             unused_in_file = pd.Series(unused_in_file)
                         if not pd.Series([pkg]).isin(unused_in_file).any():
-                            self.req.loc[pkg]['used'] = 1
+                            self.req.at[pkg, 'used'] = 1
                     except KeyError:
-                        """
-                        if it's not in the requirements.txt
-                        nor already accounted for in errors df
-                        account for it
-                        """
+                        # if it's not in the requirements.txt
+                        # nor already accounted for in errors df
+                        # account for it
                         if pkg not in self.req.index and pkg not in self.errors.index:
                             err = pd.DataFrame([{"pkg": pkg, 'used': 1}]).set_index("pkg")
                             self.errors = self.errors.append(err)
@@ -131,29 +125,28 @@ class Check:
         Recursively look through directories
         :param dir_to_check: directory name
         """
-        # ['proj', 'Check.py', ...]
-        for n in os.listdir(dir_to_check):
-            name = dir_to_check + "\\" + n
-            if len(n.split(".")) == 1:  # if it's a directory
+        # ['proj', 'check.py', ...]
+        for file_name in os.listdir(dir_to_check):
+            dir_w_name = dir_to_check + "\\" + file_name
+            if len(file_name.split(".")) == 1:  # if it's a directory
                 # 'proj'.split(".") => ['proj'] => len == 1
-                self.check_dir(name)
+                self.check_dir(dir_w_name)
             else:  # it's a file
-                # 'Check.py'.split(".") => ['Check', 'py'] => len == 2
-                name = dir_to_check + "\\" + n
-                self.check_file(name)
+                # 'check.py'.split(".") => ['Check', 'py'] => len == 2
+                self.check_file(dir_w_name)
 
     def run(self):
         """
         Loop through all the directories
         """
-        # ['proj', 'Check.py', ...]
-        base_dir = [x for x in os.listdir(self.base) if x not in ['.idea', '__pycache__']]
+        # ['proj', 'check.py', ...]
+        base_dir = [x for x in os.listdir(self.base) if x not in ['.idea', '__pycache__', '.git']]
         for file in base_dir:
             if len(file.split(".")) == 1:  # if it's a directory
                 # 'proj'.split(".") => ['proj'] => len == 1
                 self.check_dir(f"{self.base}\\{file}")
             else:  # it's a file
-                # 'Check.py'.split(".") => ['Check', 'py'] => len == 2
+                # 'check.py'.split(".") => ['Check', 'py'] => len == 2
                 self.check_file(f"{self.base}\\{file}")
 
     def export_reqs(self):
@@ -164,7 +157,6 @@ class Check:
         not_in_requirements.csv:
             IMPORT statements that were not declared in requirements.txt but were used
         """
+        self.req.index.rename('pkg', inplace=True)
         self.req.to_csv(f'{self.base}\\requirements.csv')
-        # [foo, 0] is the first row to get it to not yell at me
-        # iloc[1:] to not have foo included
-        self.errors.iloc[1:].to_csv(f'{self.base}\\not_in_requirements.csv')
+        self.errors.to_csv(f'{self.base}\\not_in_requirements.csv')

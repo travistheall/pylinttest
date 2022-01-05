@@ -1,17 +1,15 @@
 ************* Module proj.unused
-proj\unused.py:7:0: W0611: Unused shape imported from numpy (unused-import)
-proj\unused.py:7:0: W0611: Unused zeros imported from numpy (unused-import)
-proj\unused.py:8:0: W0611: Unused rand imported from scipy (unused-import)
+proj\unused.py:6:0: W0611: Unused shape imported from numpy (unused-import)
+proj\unused.py:6:0: W0611: Unused zeros imported from numpy (unused-import)
+proj\unused.py:7:0: W0611: Unused rand imported from scipy (unused-import)
+proj\unused.py:8:0: W0611: Unused import sklearn (unused-import)
 ************* Module proj.unused1
 proj\unused1.py:6:0: W0611: Unused shape imported from numpy (unused-import)
 proj\unused1.py:6:0: W0611: Unused zeros imported from numpy (unused-import)
 ************* Module proj.mod.unused1
 proj\mod\unused1.py:6:0: W0611: Unused shape imported from numpy (unused-import)
 
-------------------------------------------------------------------
-
-Your code has been rated at 6.96/10 (previous run: 6.96/10, +0.00)
-
-
-
+------------------------------------------------------------------
+Your code has been rated at 6.96/10 (previous run: 6.96/10, +0.00)
+
 [0m
