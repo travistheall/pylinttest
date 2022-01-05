@@ -36,10 +36,12 @@ class CheckProj:
         with open(f'{self.base}\\requirements.txt', 'r') as file:
             requirements = [line.replace('\n', "") for line in file]
             for requirement in requirements:
-                req_line = ''.join([character for character in requirement if character.isalpha()])
-                req_line = req_line.strip()
-                if req_line == 'os':
-                    print('os')
+                at_loc = requirement.find('@')
+                if at_loc != -1:
+                    req_line = requirement[:at_loc].strip()
+                else:
+                    req_line = ''.join([character for character in requirement if character.isalpha()])
+                    req_line = req_line.strip()
                 self.req = self.req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
 
     def check_for_out_file(self):
@@ -113,23 +115,39 @@ class CheckProj:
         f_name = f_name.replace(f"{self.base}\\", "")
         with open(f_name, 'r') as file:
             for line in file:
+                # looping through the lines to get the IMPORTed packages
                 line = line.replace('\n', "")
                 line = line.strip()
                 line = line.split(" ")
                 if line[0] in ["import", "from"]:
+                    # txt process names of pkgs
                     pkg = line[1].strip()
                     try:
+                        # see if the pkg was marked as unused in this file
+                        # by pylint should return a series
                         unused_in_file = self.unused.loc[f_name]['pkg']
                         if isinstance(unused_in_file, str):
+                            # if it returns a series convert to series
                             unused_in_file = pd.Series([unused_in_file])
                         else:
                             unused_in_file = unused_in_file.values
-                        s_pkg = pd.Series([pkg])
+                        s_pkg = pd.Series([pkg]) # convert to series for series comp
+                        # if not unused and is required then it's used
+                        # if it's used once we don't want to remove it
                         if ~s_pkg.isin(unused_in_file).any() and s_pkg.isin(self.req.index).any():
+                            # becomes requirements.csv
+                            # if it's not changed to 1 in all iterations
+                            # then it's not used
                             self.req.at[pkg, 'used'] = 1
                         else:
+                            # otherwise the package is used in the file but it's not in the requirements
+                            # os, time, etc
+                            # becomes not_in_requirements.csv
                             self.append_to_errors(pkg)
                     except KeyError:
+                        # if the package is used it'll will raise a key error
+                        # errors in the prog but not errors irl
+                        # becomes not_in_requirements.csv
                         self.append_to_errors(pkg)
 
     def check_dir(self, dir_to_check):

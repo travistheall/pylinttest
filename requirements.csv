@@ -3,3 +3,5 @@ pandas,1
 numpy,0
 scipy,1
 matplotlib,0
+scikitlearn,0
+pylint,0

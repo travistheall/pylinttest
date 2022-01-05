@@ -4,6 +4,8 @@
     <p>The requirements.txt for this is fake. I used it to check against</p>
     <p>You do need pandas though to run this. TRUE_requirements.txt</p>
 </div>
+<h3>Known limitation</h3>
+<p>If the requirement name is different from the import values then it will be missed. See <b>scikit-learn and sklearn</b>. I don't have an answer to that.</p>
 <h3>Steps</h3>
 <ol>
     <li>Clone me next to the repository</li>
@@ -65,6 +67,16 @@
         <td>0</td>
         <td>delete me</td>
     </tr>
+    <tr>
+        <td>scikitlearn</td>
+        <td>0</td>
+        <td>delete me Error used as sklearn</td>
+    </tr>
+    <tr>
+        <td>pylint</td>
+        <td>0</td>
+        <td>delete me</td>
+    </tr>
 </table>
 
 <h3>Not_In_Requirements.csv</h3>
@@ -75,6 +87,10 @@
         <th>used</th>
         <th>why</th>
     </tr>
+    <tr>
+        <td>sklearn</td>
+        <td>1</td>
+        <td>error is in requirements under diff name</td></tr>
     <tr>
         <td>os</td>
         <td>1</td>
