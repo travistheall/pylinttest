@@ -5,9 +5,8 @@ import os
 import time
 from datetime import datetime
 import pandas as pd
-from tqdm import tqdm
 from .parse_requirements import parse_requirements
-from .lint import Lint
+# from .lint import Lint
 
 
 class CheckProj:
@@ -30,8 +29,8 @@ class CheckProj:
         self.proj = os.path.dirname(base)
         self.out_file = os.path.join(base, f'out-{self.now}.txt')
         self.req = parse_requirements(self.proj)
-        self.lint = Lint(base, self.now, self.req)
-        self.unused = self.lint.unused
+        # self.lint = Lint(base, self.now, self.req)
+        # self.unused = self.lint.unused
         self.not_in_req = pd.DataFrame(columns=['pkg', 'used'])
         self.not_in_req.set_index('pkg', inplace=True)
 
@@ -68,16 +67,17 @@ class CheckProj:
                     try:
                         # see if the pkg was marked as unused in this file
                         # by pylint should return a series
-                        unused_in_file = self.unused.loc[f_name]['pkg']
-                        if isinstance(unused_in_file, str):
+                        # unused_in_file = self.unused.loc[f_name]['pkg']
+                        # if isinstance(unused_in_file, str):
                             # if it returns a series convert to series
-                            unused_in_file = pd.Series([unused_in_file])
-                        else:
-                            unused_in_file = unused_in_file.values
+                        #    unused_in_file = pd.Series([unused_in_file])
+                        # else:
+                        #    unused_in_file = unused_in_file.values
                         s_pkg = pd.Series([pkg])  # convert to series for series comp
                         # if not unused and is required then it's used
                         # if it's used once we don't want to remove it
-                        if ~s_pkg.isin(unused_in_file).any() and s_pkg.isin(self.req.index).any():
+                        #if ~s_pkg.isin(unused_in_file).any() and s_pkg.isin(self.req.index).any():
+                        if s_pkg.isin(self.req.index).any():
                             # becomes requirements.csv
                             # if it's not changed to 1 in all iterations
                             # then it's not used
@@ -100,7 +100,7 @@ class CheckProj:
         :param directory: directory name
         """
         # ['proj', 'check.py', ...]
-        for file_or_dir in tqdm(os.listdir(directory)):
+        for file_or_dir in os.listdir(directory):
             self.route_file_dir(directory, file_or_dir)
 
     def route_file_dir(self, parent_dir, file_or_dir):
@@ -137,16 +137,15 @@ class CheckProj:
     def run(self):
         """
         Main function to run prog
-        Lints all files and
         Loops through all the directories
         """
         # ['proj', 'check.py', ...]
-        print('linting')
-        self.lint.run()
-        self.unused = self.lint.parse_out_file()
+        # print('linting')
+        # self.lint.run()
+        # self.unused = self.lint.parse_out_file()
         print('checking for unused requirements')
         proj_files = [x for x in os.listdir(self.proj) if x not in ['lint_dir']]
-        for file_or_dir in tqdm(proj_files):
+        for file_or_dir in proj_files:
             self.route_file_dir(self.proj, file_or_dir)
 
         self.export()
