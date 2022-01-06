@@ -4,6 +4,7 @@ Module to check requirements for used and unused packages.
 import os
 import time
 import pandas as pd
+from tqdm import tqdm
 
 
 class CheckProj:
@@ -22,17 +23,19 @@ class CheckProj:
 
     def __init__(self, base):
         self.base = base
-        self.req = pd.DataFrame(columns=['pkg', 'used'])
+        self.req = self.set_reqs()
         self.unused = pd.DataFrame(columns=['file_name', 'pkg'])
         self.errors = pd.DataFrame(columns=['pkg', 'used'])
         self.errors.set_index('pkg', inplace=True)
         self.unused.set_index('file_name', inplace=True)
-        self.req.set_index('pkg', inplace=True)
 
-    def make_reqs(self):
+    def set_reqs(self):
         """
         Reads the requirements.txt to create a list to check pylint results
         """
+        req = pd.DataFrame(columns=['pkg', 'used'])
+        req.set_index('pkg', inplace=True)
+
         symbs = ["==", ">", ">=", "<", "<=", "~=", "~", "@"]
         with open(f'{self.base}\\requirements.txt', 'r') as file:
             requirements = [line.replace('\n', "") for line in file]
@@ -45,7 +48,10 @@ class CheckProj:
                 else:
                     req_line = requirement.strip()
 
-                self.req = self.req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
+                req = req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
+
+        req.index.rename('pkg', inplace=True)
+        return req
 
     def check_for_out_file(self):
         """
@@ -59,13 +65,6 @@ class CheckProj:
             print('Line 57: FileNotFound sleep 5 seconds. Change me for longer wait')
             time.sleep(5)
             self.check_for_out_file()
-
-    def run_pylint(self):
-        """
-        Creates an out.txt file that we will use to see if a particular package is used in a file
-        """
-        os.system(f'pylint --disable=all --enable=W0611 {self.base}\\proj > {self.base}\\out.txt')
-        self.check_for_out_file()
 
     def set_unused(self):
         """
@@ -96,6 +95,14 @@ class CheckProj:
             not_used = pd.DataFrame(not_used, columns=['file_name', 'pkg'])
             not_used.set_index('file_name', inplace=True)
             self.unused = not_used
+
+    def run_pylint(self):
+        """
+        Creates an out.txt file that we will use to see if a particular package is used in a file
+        """
+        os.system(f'pylint --disable=all --enable=W0611 {self.base}\\proj > {self.base}\\out.txt | tqdm --bytes')
+        self.check_for_out_file()
+        self.set_unused()
 
     def append_to_errors(self, pkg):
         """
@@ -134,7 +141,7 @@ class CheckProj:
                             unused_in_file = pd.Series([unused_in_file])
                         else:
                             unused_in_file = unused_in_file.values
-                        s_pkg = pd.Series([pkg]) # convert to series for series comp
+                        s_pkg = pd.Series([pkg])  # convert to series for series comp
                         # if not unused and is required then it's used
                         # if it's used once we don't want to remove it
                         if ~s_pkg.isin(unused_in_file).any() and s_pkg.isin(self.req.index).any():
@@ -160,7 +167,7 @@ class CheckProj:
         :param dir_to_check: directory name
         """
         # ['proj', 'check.py', ...]
-        for file_name in os.listdir(dir_to_check):
+        for file_name in tqdm(os.listdir(dir_to_check)):
             self.route_file_dir(file_name, dir_to_check)
 
     def route_file_dir(self, file_name, dir_to_check):
@@ -176,15 +183,6 @@ class CheckProj:
             # 'check.py'.split(".") => ['Check', 'py'] => len == 2
             self.check_file(dir_w_name)
 
-    def run(self):
-        """
-        Loop through all the directories
-        """
-        # ['proj', 'check.py', ...]
-        base_dir = [x for x in os.listdir(self.base) if x not in ['.idea', '__pycache__', '.git']]
-        for file in base_dir:
-            self.route_file_dir(file, self.base)
-
     def export_reqs(self):
         """
         Creates two files
@@ -193,6 +191,23 @@ class CheckProj:
         not_in_requirements.csv:
             IMPORT statements that were not declared in requirements.txt but were used
         """
-        self.req.index.rename('pkg', inplace=True)
         self.req.to_csv(f'{self.base}\\requirements.csv')
         self.errors.to_csv(f'{self.base}\\not_in_requirements.csv')
+
+    def run(self):
+        """
+        Main function to run prog
+        Lints all files and
+        Loops through all the directories
+        """
+        # ['proj', 'check.py', ...]
+        print('linting')
+        self.run_pylint()
+        print('checking for unused requirements')
+        base_dir = [x for x in os.listdir(self.base) if x not in ['.idea', '__pycache__', '.git']]
+        for file in tqdm(base_dir):
+            self.route_file_dir(file, self.base)
+
+        print('exporting')
+        self.export_reqs()
+        print('done')
