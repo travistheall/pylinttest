@@ -1,14 +1,16 @@
 ************* Module proj.unused1
-proj/unused1.py:6:0: W0611: Unused shape imported from numpy (unused-import)
-proj/unused1.py:6:0: W0611: Unused zeros imported from numpy (unused-import)
+proj/unused1.py:5:0: W0611: Unused import time (unused-import)
+proj/unused1.py:7:0: W0611: Unused shape imported from numpy (unused-import)
+proj/unused1.py:7:0: W0611: Unused zeros imported from numpy (unused-import)
 ************* Module proj.unused
 proj/unused.py:6:0: W0611: Unused shape imported from numpy (unused-import)
 proj/unused.py:6:0: W0611: Unused zeros imported from numpy (unused-import)
 proj/unused.py:7:0: W0611: Unused rand imported from scipy (unused-import)
-************* Module proj.mod.unused1
-proj/mod/unused1.py:6:0: W0611: Unused shape imported from numpy (unused-import)
+proj/unused.py:8:0: W0611: Unused check imported from lint_dir (unused-import)
+************* Module proj.proj_mod.unused1
+proj/proj_mod/unused1.py:6:0: W0611: Unused shape imported from numpy (unused-import)
 
 ------------------------------------------------------------------
-Your code has been rated at 7.50/10 (previous run: 7.50/10, +0.00)
+Your code has been rated at 9.42/10 (previous run: 9.35/10, +0.07)
 
 [0m
