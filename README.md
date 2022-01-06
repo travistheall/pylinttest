@@ -2,24 +2,27 @@
 <h3>Brute force very slow I'm sure</h3>
 <div>
     <p>The requirements.txt for this is fake. I used it to check against</p>
-    <p>You do need pandas though to run this. TRUE_requirements.txt</p>
+    <p>You do need pandas and tqdm though to run this. TRUE_requirements.txt</p>
 </div>
 <h3>Known limitation</h3>
 <p>If the requirement name is different from the import values then it will be missed. See <b>scikit-learn and sklearn</b>. I don't have an answer to that.</p>
 <h3>Steps</h3>
 <ol>
-    <li>Clone me next to the repository</li>
-    <li>Run
+    <li>Clone me into the dd repository
         <ul>
-            <li>rm -rf proj</li>
+            <li>cd /Users/yashbehal/projects/doorstep_django</li>
+            <li>git clone https://github.com/travistheall/pylinttest</li>
+            <li>mv pylinttest/proj/lint_dir  ../..</li>
+            <li>should end up /Users/yashbehal/projects/doorstep_django/lint_dir</li>
+            <li>rm -rf pylinttest</li>
+            <li>cd /Users/yashbehal/projects/doorstep_django/lint_dir</li>
         </ul>
     </li>
     <li>
-        Change base variable to this project
+        Change pylint_dir variable to this project
         <ul>
             <li>Example:</li>
-            <li># base = "C:\\Users\\7J3234897\\PycharmProjects\\pylinttest"</li>
-            <li>base = "Change Me"</li>
+            <li>pylint_dir = "/Users/yashbehal/projects/doorstep_django/lint_dir"</li>
         </ul>
     </li>
     <li>
@@ -102,7 +105,7 @@
         <td>python standard library</td>
     </tr>
     <tr>
-        <td>Check</td>
+        <td>lint_dr</td>
         <td>1</td>
         <td>project module</td>
     </tr>
