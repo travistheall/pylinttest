@@ -2,7 +2,7 @@
 <h3>Brute force very slow I'm sure</h3>
 <div>
     <p>The requirements.txt for this is fake. I used it to check against</p>
-    <p>You do need pandas and tqdm though to run this. TRUE_requirements.txt</p>
+    <p>You do need pandas and tqdm though to run this. requirements.txt</p>
 </div>
 <h3>Known limitation</h3>
 <p>If the requirement name is different from the import values then it will be missed. See <b>scikit-learn and sklearn</b>. I don't have an answer to that.</p>
