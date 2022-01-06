@@ -3,8 +3,11 @@ Module to check requirements for used and unused packages.
 """
 import os
 import time
+from datetime import datetime
 import pandas as pd
 from tqdm import tqdm
+from .parse_requirements import parse_requirements
+from .lint import Lint
 
 
 class CheckProj:
@@ -22,89 +25,15 @@ class CheckProj:
     """
 
     def __init__(self, base):
+        self.now = str(time.mktime(datetime.now().timetuple()))[:-2]
         self.base = base
         self.proj = os.path.dirname(base)
-        self.req = self.set_reqs()
-        self.unused = pd.DataFrame(columns=['file_name', 'pkg'])
-        self.errors = pd.DataFrame(columns=['pkg', 'used'])
-        self.errors.set_index('pkg', inplace=True)
-        self.unused.set_index('file_name', inplace=True)
-
-    def set_reqs(self):
-        """
-        Reads the requirements.txt to create a list to check pylint results
-        """
-        req = pd.DataFrame(columns=['pkg', 'used'])
-        req.set_index('pkg', inplace=True)
-
-        symbs = ["==", ">", ">=", "<", "<=", "~=", "~", "@"]
-        with open(os.path.join(self.proj, 'requirements.txt'), 'r') as file:
-            requirements = [line.replace('\n', "") for line in file]
-            for requirement in requirements:
-                # see what is separating versions
-                symb = [symb for symb in symbs if symb in requirement]
-                if len(symb) > 0:
-                    symb_loc = requirement.find(symb[0])
-                    req_line = requirement[:symb_loc].strip()
-                else:
-                    req_line = requirement.strip()
-
-                req = req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
-
-        req.index.rename('pkg', inplace=True)
-        return req
-
-    def check_for_out_file(self):
-        """
-        lazy async await probably change the sleep to longer since bigger file
-        """
-        try:
-            # fails if not there
-            with open(os.path.join(self.base, 'out.txt'), 'r') as file:
-                file.close()
-        except FileNotFoundError:
-            print('Line 57: FileNotFound sleep 5 seconds. Change me for longer wait')
-            time.sleep(5)
-            self.check_for_out_file()
-
-    def set_unused(self):
-        """
-        sets global unused
-        """
-        not_used = []  # using a different name for func scope
-        with open(os.path.join(self.base, 'out.txt'), 'r') as pylint_out:
-            for line in pylint_out:
-                # W0611 is unused-IMPORT error
-                # text processing
-                if line.find("W0611") != -1:
-                    # line we care about is formatted like VVV
-                    # proj\\proj_mod\\unused1.py:6:0: W0611: Unused shape
-                    # IMPORTed from numpy (unused-IMPORT)
-                    line = line.replace('\n', "")
-                    line = line.strip()
-                    # file_in = proj\proj_mod\unused1.py
-                    file_in = line.split(":")[0]
-                    # ["Unused", "shape", "IMPORTed", "from", "numpy"]
-                    line = line.split(":")[-1].split(" ")
-                    for word in line:
-                        word = word.strip()
-                        if word in self.req.index:
-                            # if the word is in the requirements.txt then its a module
-                            # in this case numpy
-                            not_used.append([file_in, word])
-
-            not_used = pd.DataFrame(not_used, columns=['file_name', 'pkg'])
-            not_used.set_index('file_name', inplace=True)
-            self.unused = not_used
-
-    def run_pylint(self):
-        """
-        Creates an out.txt file that we will use to see if a particular package is used in a file
-        """
-        proj_out = os.path.join(self.base, 'out.txt')
-        os.system(f'pylint --disable=all --enable=W0611 {self.proj} > {proj_out}')
-        self.check_for_out_file()
-        self.set_unused()
+        self.out_file = os.path.join(base, f'out-{self.now}.txt')
+        self.req = parse_requirements(self.proj)
+        self.lint = Lint(base, self.now, self.req)
+        self.unused = self.lint.unused
+        self.not_in_req = pd.DataFrame(columns=['pkg', 'used'])
+        self.not_in_req.set_index('pkg', inplace=True)
 
     def append_to_errors(self, pkg):
         """
@@ -112,11 +41,11 @@ class CheckProj:
         nor already accounted for in errors df
         account for it
         """
-        if pkg not in self.req.index and pkg not in self.errors.index:
+        if pkg not in self.req.index and pkg not in self.not_in_req.index:
             err = pd.DataFrame([{"pkg": pkg, 'used': 1}]).set_index("pkg")
-            self.errors = self.errors.append(err)
+            self.not_in_req = self.not_in_req.append(err)
 
-    def check_file(self, f_name):
+    def parse_project_file(self, f_name):
         """
         Checks each individual file for the used and unused packages
         Changes used from 0 to 1 if used.
@@ -125,7 +54,8 @@ class CheckProj:
         :param f_name: file name
         """
         with open(f_name, 'r') as file:
-            proj = os.path.dirname(self.proj)+"/"
+            proj = os.path.dirname(self.proj)
+            proj = os.path.join(proj, "")
             f_name = f_name.replace(proj, '')
             for line in file:
                 # looping through the lines to get the IMPORTed packages
@@ -185,20 +115,24 @@ class CheckProj:
             self.loop_dir(parent_w_child)
         elif file_or_dir.split(".")[1] == 'py':  # it's a py file
             # 'check.py'.split(".") => ['Check', 'py'] => len == 2
-            self.check_file(parent_w_child)
+            self.parse_project_file(parent_w_child)
         else:  # it's a reg  file
             pass
 
-    def export_reqs(self):
+    def export(self):
         """
         Creates two files
-        requirements.csv:
-            contains all the packages from the requirements.txt and 0 if not used 1 if used
-        not_in_requirements.csv:
-            IMPORT statements that were not declared in requirements.txt but were used
+        requirements-now.csv:
+            contains all the packages from the requirements and 0 if not used 1 if used
+        not_in_requirements-now.csv:
+            IMPORT statements that were not declared in requirement.txt but were used
         """
-        self.req.to_csv(os.path.join(self.base, 'requirements.csv'))
-        self.errors.to_csv(os.path.join(self.base, 'not_in_requirements.csv'))
+        req_csv = os.path.join(self.base, f'requirements-{self.now}.csv')
+        print(f'exporting to {req_csv}')
+        self.req.to_csv(req_csv)
+        not_req_csv = os.path.join(self.base, f'not_in_requirements-{self.now}.csv')
+        print(f'exporting to {not_req_csv}')
+        self.not_in_req.to_csv(not_req_csv)
 
     def run(self):
         """
@@ -208,12 +142,12 @@ class CheckProj:
         """
         # ['proj', 'check.py', ...]
         print('linting')
-        self.run_pylint()
+        self.lint.run()
+        self.unused = self.lint.parse_out_file()
         print('checking for unused requirements')
         proj_files = [x for x in os.listdir(self.proj) if x not in ['lint_dir']]
         for file_or_dir in tqdm(proj_files):
             self.route_file_dir(self.proj, file_or_dir)
 
-        print('exporting')
-        self.export_reqs()
+        self.export()
         print('done')

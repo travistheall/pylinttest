@@ -7,8 +7,9 @@ from check import CheckProj
 
 if __name__ == '__main__':
     print('init')
-    pylint_dir = "/Users/tnt/dev/pylinttest/proj/lint_dir"
-    # lint_dir = "/Users/yashbehal/projects/doorstep_django/lint_dir"
+    pylint_dir = "C:\\Users\\7J3234897\\PycharmProjects\\pylinttest\\proj\\lint_dir"
+    # pylint_dir = "/Users/tnt/dev/pylinttest/proj/lint_dir"
+    # pylint_dir = "/Users/yashbehal/projects/doorstep_django/lint_dir"
     # main.py and check.py should be here
     # out.txt, requirements.csv, and not_in_requirements.csv will be made here
     # I expect requirements.txt to be

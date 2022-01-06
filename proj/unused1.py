@@ -10,5 +10,6 @@ from numpy import (
 )
 from scipy import rand
 
+
 df = pd.DataFrame(rand)
 print(os.getcwd())
