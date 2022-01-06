@@ -4,3 +4,6 @@ proj/lint_dir/__pycache__/
 proj/lint_dir/.DS_Store/
 .DS_Store/
 proj/.DS_Store/
+proj/lint_dir/out.txt
+proj/lint_dir/requirements.csv
+proj/lint_dir/not_in_requirements.csv
