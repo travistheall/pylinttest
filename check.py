@@ -33,17 +33,18 @@ class CheckProj:
         """
         Reads the requirements.txt to create a list to check pylint results
         """
+        symbs = ["==", ">", ">=", "<", "<=", "~=", "~", "@"]
         with open(f'{self.base}\\requirements.txt', 'r') as file:
             requirements = [line.replace('\n', "") for line in file]
             for requirement in requirements:
-                at_loc = requirement.find('@')
-                if at_loc != -1:
-                    req_line = requirement[:at_loc].strip()
+                # see what is separating versions
+                symb = [symb for symb in symbs if symb in requirement]
+                if len(symb) > 0:
+                    symb_loc = requirement.find(symb[0])
+                    req_line = requirement[:symb_loc].strip()
                 else:
-                    req_line = ''.join(
-                        [character for character in requirement if character.isalpha()]
-                    )
-                    req_line = req_line.strip()
+                    req_line = requirement.strip()
+
                 self.req = self.req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
 
     def check_for_out_file(self):
