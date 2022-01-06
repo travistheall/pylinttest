@@ -11,6 +11,6 @@ proj/unused.py:8:0: W0611: Unused check imported from lint_dir (unused-import)
 proj/proj_mod/unused1.py:6:0: W0611: Unused shape imported from numpy (unused-import)
 
 ------------------------------------------------------------------
-Your code has been rated at 9.42/10 (previous run: 9.35/10, +0.07)
+Your code has been rated at 9.43/10 (previous run: 9.42/10, +0.01)
 
 [0m

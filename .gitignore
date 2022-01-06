@@ -1,3 +1,6 @@
 .idea/
 __pycache__/
 proj/lint_dir/__pycache__/
+proj/lint_dir/.DS_Store/
+.DS_Store/
+proj/.DS_Store/

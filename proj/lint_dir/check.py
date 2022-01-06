@@ -102,7 +102,7 @@ class CheckProj:
         Creates an out.txt file that we will use to see if a particular package is used in a file
         """
         proj_out = os.path.join(self.base, 'out.txt')
-        os.system(f'pylint --disable=all --enable=W0611 {self.proj} >> {proj_out}')
+        os.system(f'pylint --disable=all --enable=W0611 {self.proj} > {proj_out}')
         self.check_for_out_file()
         self.set_unused()
 
