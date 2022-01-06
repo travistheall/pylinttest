@@ -16,4 +16,4 @@ if __name__ == '__main__':
     # /Users/yashbehal/projects/doorstep_django/requirement.txt
     check = CheckProj(base=pylint_dir)
     check.run()
-    print('done')
+    print('program finished')

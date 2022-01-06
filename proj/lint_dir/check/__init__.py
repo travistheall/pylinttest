@@ -150,4 +150,4 @@ class CheckProj:
             self.route_file_dir(self.proj, file_or_dir)
 
         self.export()
-        print('done')
+        print('check done')
