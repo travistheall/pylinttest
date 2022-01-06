@@ -31,18 +31,7 @@ class CheckProj:
         self.req = parse_requirements(self.proj)
         # self.lint = Lint(base, self.now, self.req)
         # self.unused = self.lint.unused
-        self.not_in_req = pd.DataFrame(columns=['pkg', 'used'])
-        self.not_in_req.set_index('pkg', inplace=True)
-
-    def append_to_errors(self, pkg):
-        """
-        if it's not in the requirements.txt
-        nor already accounted for in errors df
-        account for it
-        """
-        if pkg not in self.req.index and pkg not in self.not_in_req.index:
-            err = pd.DataFrame([{"pkg": pkg, 'used': 1}]).set_index("pkg")
-            self.not_in_req = self.not_in_req.append(err)
+        self.not_in_req = pd.Series(name='pkg')
 
     def parse_project_file(self, f_name):
         """
@@ -53,46 +42,18 @@ class CheckProj:
         :param f_name: file name
         """
         with open(f_name, 'r') as file:
-            proj = os.path.dirname(self.proj)
-            proj = os.path.join(proj, "")
-            f_name = f_name.replace(proj, '')
-            for line in file:
-                # looping through the lines to get the IMPORTed packages
-                line = line.replace('\n', "")
-                line = line.strip()
-                line = line.split(" ")
-                if line[0] in ["import", "from"]:
-                    # txt process names of pkgs
-                    pkg = line[1].strip()
-                    try:
-                        # see if the pkg was marked as unused in this file
-                        # by pylint should return a series
-                        # unused_in_file = self.unused.loc[f_name]['pkg']
-                        # if isinstance(unused_in_file, str):
-                            # if it returns a series convert to series
-                        #    unused_in_file = pd.Series([unused_in_file])
-                        # else:
-                        #    unused_in_file = unused_in_file.values
-                        s_pkg = pd.Series([pkg])  # convert to series for series comp
-                        # if not unused and is required then it's used
-                        # if it's used once we don't want to remove it
-                        #if ~s_pkg.isin(unused_in_file).any() and s_pkg.isin(self.req.index).any():
-                        if s_pkg.isin(self.req.index).any():
-                            # becomes requirements.csv
-                            # if it's not changed to 1 in all iterations
-                            # then it's not used
-                            self.req.at[pkg, 'used'] = 1
-                        else:
-                            # otherwise the package is used in the file
-                            # but it's not in the requirements
-                            # os, time, etc
-                            # becomes not_in_requirements.csv
-                            self.append_to_errors(pkg)
-                    except KeyError:
-                        # if the package is used it'll will raise a key error
-                        # errors in the prog but not errors irl
-                        # becomes not_in_requirements.csv
-                        self.append_to_errors(pkg)
+            lines = [line for line in file]
+            lines = pd.Series(lines).str.strip()
+            l_import = lines[lines.str.startswith('import')]
+            f_import = lines[lines.str.startswith('from')]
+            a_import = l_import.append(f_import)
+            pkgs = a_import.str.split(" ", expand=True)[1].reset_index()[1]
+            req_pkgs = pkgs[pkgs.isin(self.req.index)].reset_index()[1]
+            self.req.at[req_pkgs, 'used'] = 1
+
+            not_req_pkgs = pkgs[~pkgs.isin(self.req.index)].reset_index()[1]
+            not_req_pkgs = not_req_pkgs.rename('pkg')
+            self.not_in_req = self.not_in_req.append(not_req_pkgs, ignore_index=True)
 
     def loop_dir(self, directory):
         """
@@ -131,8 +92,9 @@ class CheckProj:
         print(f'exporting to {req_csv}')
         self.req.to_csv(req_csv)
         not_req_csv = os.path.join(self.base, f'not_in_requirements-{self.now}.csv')
+        self.not_in_req.drop_duplicates(keep='first', inplace=True)
         print(f'exporting to {not_req_csv}')
-        self.not_in_req.to_csv(not_req_csv)
+        self.not_in_req.to_csv(not_req_csv, index=False)
 
     def run(self):
         """

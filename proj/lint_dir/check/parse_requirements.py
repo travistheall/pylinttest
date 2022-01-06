@@ -6,22 +6,28 @@ def parse_requirements(proj):
     """
     Reads the requirements.txt to create a pandas dataframe to check pylint results
     """
-    req = pd.DataFrame(columns=['pkg', 'used'])
-    req.set_index('pkg', inplace=True)
-
-    symbs = ["==", ">", ">=", "<", "<=", "~=", "~", "@"]
     with open(os.path.join(proj, 'requirements.txt'), 'r') as file:
-        requirements = [line.replace('\n', "") for line in file]
-        for requirement in requirements:
-            # see what is separating versions
-            symb = [symb for symb in symbs if symb in requirement]
+        reqs = pd.Series([line for line in file])
+        reqs = reqs.str.replace('\n', "")
+
+        def find_smb(r):
+            symbs = ["==", ">", ">=", "<", "<=", "~=", "~", "@"]
+            symb = [r.find(symb[0]) for symb in symbs if symb in r]
             if len(symb) > 0:
-                symb_loc = requirement.find(symb[0])
-                req_line = requirement[:symb_loc].strip()
+                return symb[0]
             else:
-                req_line = requirement.strip()
+                return 0
 
-            req = req.append(pd.DataFrame([0], index=[req_line], columns=['used']))
+        def find_name(r):
+            if r['symbloc'] == 0:
+                return r['pkg']
+            else:
+                return r['pkg'][:r['symbloc']]
 
-    req.index.rename('pkg', inplace=True)
-    return req
+        symb_loc = pd.DataFrame([reqs, reqs.apply(lambda r: find_smb(r))], index=['pkg', 'symbloc']).T
+        pkg_names = symb_loc.apply(lambda r: find_name(r), axis='columns')
+        pkg_names = pkg_names.rename('pkg')
+        pkg_names = pkg_names.to_frame()
+        pkg_names['used'] = 0
+        pkg_names.set_index('pkg', inplace=True)
+        return pkg_names

@@ -8,6 +8,7 @@ import os
 if __name__ == '__main__':
     print('init')
     pylint_dir = os.getcwd()
+    print(pylint_dir)
     # main.py and check.py should be here
     # out.txt, requirements.csv, and not_in_requirements.csv will be made here
     # I expect requirements.txt to be
