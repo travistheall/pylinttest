@@ -1,8 +1,6 @@
 .idea/
 proj/lint_dir/out-*.txt
-proj/lint_dir/requirements-*.csv
-proj/lint_dir/not_in_requirements-*.csv
+proj/lint_dir/.git
 **/__pycache__/
 **/.DS_Store/
 **.svg
-proj/lint_dir/.git

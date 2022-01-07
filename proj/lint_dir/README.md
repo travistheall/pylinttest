@@ -1,10 +1,11 @@
 <h1>Check files for unused imports and unused packages in requirements.txt</h1>
-<h3>Brute force very slow I'm sure</h3>
+<h3>Has been optimized for speed</h3>
+
 <div>
-    <p>You need pandas to run this.</p>
+    <p>You need python3 and pandas to run this.</p>
 </div>
-<h3>I just removed linting entirely</h3>
-<h3>Known limitation</h3>
+
+<h3>Known limitation:</h3>
 <p>If the requirement name is different from the import values then it will be missed. See <b>scikit-learn and sklearn</b>. I don't have an answer to that.</p>
 <h3>Steps</h3>
 <ol>

@@ -13,12 +13,15 @@ class CheckProj:
     """
     Class used to check if requirements are used in a project.
     Steps:
-        1. Runs pylint to check files for unused packages
-        2. Then checks IMPORT statements of files in modules
-        3. Then updates whether a requirement was used
-        4. Exports to a csv
+        1. Then checks IMPORT statements of files in modules
+        2. Then updates whether a requirement was used
+        3. Exports to a csv (requirements.csv)
             a. 0 = not used
             b. 1 = used
+        4. If an import is used but not in requirements.txt
+            it is added to not_in_requirements.txt
+            1 column.
+            All packages in the file are used.
     Inputs:
         base = lint_dir directory of the project
     """
